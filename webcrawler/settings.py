@@ -31,12 +31,14 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'jazzmin',  
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'crawler'
 ]
 
 MIDDLEWARE = [
@@ -121,3 +123,59 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+JAZZMIN_SETTINGS = {
+    # title of the window (Will default to current_admin_site.site_title if absent or None)
+    'site_title': 'My Admin',
+
+    # Title on the brand, and the login screen (19 chars max) (defaults to current_admin_site.site_header if absent or None)
+    'site_header': 'My Administration',
+
+    # Logo to use for your site, must be present in static files, used for brand on top left
+    'site_logo': 'images/my_logo.png',
+
+    # CSS classes that are applied to the logo above
+    'site_logo_classes': 'img-circle',
+
+    # Welcome text on the login screen
+    'welcome_sign': 'Welcome to My Administration',
+
+    # Copyright on the footer
+    'copyright': 'Acme Inc',
+
+    # The model admin to search from the search bar, search bar omitted if excluded
+    # 'search_model': 'auth.User',
+
+    # Field name on user model that contains avatar image
+    # 'user_avatar': None,
+
+    #################
+    # Side Menu
+    #################
+
+    # Whether to display the side menu
+    'show_sidebar': True,
+
+    # Whether to aut expand the menu
+    'navigation_expanded': True,
+
+    # Custom icons for side menu apps/models
+    # 'icons': {
+    #     'auth': 'fas fa-users-cog',
+    #     'auth.user': 'fas fa-user',
+    #     'auth.Group': 'fas fa-users',
+    # },
+
+    # Icons that are used when one is not manually specified
+    'default_icon_parents': 'fas fa-chevron-circle-right',
+    'default_icon_children': 'fas fa-circle',
+
+    'related_modal_active': True,
+
+    'custom_actions': {
+        'My Custom Action': 'myapp.my_module.my_custom_function',
+    },
+}
+
+AUTH_USER_MODEL = 'auth.User'
+
