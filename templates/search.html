@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Search Engine</title>
+</head>
+<body>
+    <h1>Search Engine with Crawling</h1>
+    <form id="searchForm">
+        <input type="text" id="urlInput" name="url" placeholder="Enter website URL">
+        <input type="text" id="keywordInput" name="keyword" placeholder="Enter keyword">
+        <button type="submit">Search</button>
+        <button type="button" id="clearButton">Clear</button>
+    </form>
+    
+    <h2>Crawl Progress</h2>
+    <div id="progress"></div>
+    
+    <h2>Search Results</h2>
+    <div id="results"></div>
+
+    <script>
+        document.getElementById('searchForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const url = document.getElementById('urlInput').value;
+            const keyword = document.getElementById('keywordInput').value;
+            const ws_url = 'ws://' + window.location.host + '/ws/crawl/';
+
+            const socket = new WebSocket(ws_url);
+
+            socket.onopen = function(e) {
+                socket.send(JSON.stringify({'url': url}));
+            };
+
+            socket.onmessage = function(e) {
+                const data = JSON.parse(e.data);
+                const progressDiv = document.getElementById('progress');
+                const resultsDiv = document.getElementById('results');
+                
+                if (data.message) {
+                    progressDiv.innerHTML += '<p>' + data.message + '</p>';
+                } else if (data.url) {
+                    progressDiv.innerHTML += '<p>Currently crawling: <a href="' + data.url + '">' + data.url + '</a></p>';
+                } else if (data.report) {
+                    progressDiv.innerHTML += '<p>Crawling finished.</p>';
+                    
+                    // Once crawling is complete, initiate the keyword search
+                    fetch('/search/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ 'keyword': keyword, 'url': url })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        resultsDiv.innerHTML = '';
+                        if (data.results.length > 0) {
+                            data.results.forEach(result => {
+                                resultsDiv.innerHTML += `<p><a href="${result}">${result}</a></p>`;
+                            });
+                        } else {
+                            resultsDiv.innerHTML = '<p>No results found.</p>';
+                        }
+                    })
+                    .catch(error => {
+                        resultsDiv.innerHTML = '<p>Error fetching search results.</p>';
+                        console.error('Error:', error);
+                    });
+                } else if (data.error) {
+                    progressDiv.innerHTML += '<p style="color: red;">Error: ' + data.error + '</p>';
+                }
+            };
+
+            socket.onclose = function(e) {
+                console.error('WebSocket closed unexpectedly');
+            };
+
+            socket.onerror = function(e) {
+                console.error('WebSocket error: ', e);
+            };
+        });
+
+        // Clear button functionality
+        document.getElementById('clearButton').addEventListener('click', function() {
+            document.getElementById('urlInput').value = '';
+            document.getElementById('keywordInput').value = '';
+            document.getElementById('progress').innerHTML = '';
+            document.getElementById('results').innerHTML = '';
+        });
+    </script>
+</body>
+</html>

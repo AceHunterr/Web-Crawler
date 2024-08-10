@@ -35,7 +35,7 @@ def parse_page(content, base_url):
     return title, body, links
 
 
-def crawl(url, max_links_per_page=30, max_depth=2):
+def crawl(url, max_links_per_page=10, max_depth=2, report_progress=None):
     visited = {}
     to_visit = [(url, 0)]  
 
@@ -51,34 +51,38 @@ def crawl(url, max_links_per_page=30, max_depth=2):
 
         visited[current_url] += 1
         content = fetch_page(current_url)
+
         if content:
             title, body, links = parse_page(content, current_url)
 
-            if current_depth == 0:
-                # Create or update WebPage for the initial URL
-                webpage, created = WebPage.objects.get_or_create(url=current_url, defaults={'title': title, 'content': '', 'visits': 1, 'report': {}})
-                if not created:
-                    webpage.title = title
-                    webpage.visits += 1
-                    webpage.save()
+            # Save the crawled page content to the database
+            webpage, created = WebPage.objects.get_or_create(
+                url=current_url,
+                defaults={'title': title, 'content': body, 'visits': 1, 'report': {}}
+            )
+            if not created:
+                webpage.title = title
+                webpage.content = body
+                webpage.visits += 1
+                webpage.save()
 
-            # Add a limited number of new links to the stack
+            if report_progress:
+                report_progress(current_url)  
+
             for link in links[:max_links_per_page]:
                 if link.startswith('http'):
                     to_visit.append((link, current_depth + 1))
+        else:
+            if report_progress:
+                report_progress(f"Error: Could not fetch {current_url}")
 
-    # Save the entire report for the initial URL
     report = {url: visited_count for url, visited_count in visited.items()}
-    print(json.dumps(report, indent=4))
 
-    # Save the report in the WebPage model's `report` field for the initial URL
-    initial_url = url
     try:
-        webpage = WebPage.objects.get(url=initial_url)
+        webpage = WebPage.objects.get(url=url)
         webpage.report = report
         webpage.save()
     except WebPage.DoesNotExist:
-        # Handle the case where the initial URL WebPage instance does not exist
-        print(f"Initial URL {initial_url} not found in WebPage model.")
+        print(f"Initial URL {url} not found in WebPage model.")
 
     return report

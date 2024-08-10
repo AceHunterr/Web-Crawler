@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Crawl Website</title>
+</head>
+<body>
+    <h1>Enter URL to Crawl</h1>
+    <form id="crawlForm">
+        <input type="text" id="urlInput" name="url" placeholder="Enter website URL">
+        <button type="submit">Crawl</button>
+        <button type="button" id="clearButton">Clear</button>
+    </form>
+    
+    <h2>Crawl Progress</h2>
+    <div id="progress"></div>
+    
+    <h2>Final Report</h2>
+    <pre id="finalReport"></pre>
+
+    <script>
+        document.getElementById('crawlForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const url = document.getElementById('urlInput').value;
+            const ws_url = 'ws://' + window.location.host + '/ws/crawl/';
+
+            const socket = new WebSocket(ws_url);
+
+            socket.onopen = function(e) {
+                socket.send(JSON.stringify({'url': url}));
+            };
+
+            socket.onmessage = function(e) {
+                const data = JSON.parse(e.data);
+                const progressDiv = document.getElementById('progress');
+                const finalReportDiv = document.getElementById('finalReport');
+
+                if (data.message) {
+                    progressDiv.innerHTML += '<p>' + data.message + '</p>';
+                } else if (data.url) {
+                    progressDiv.innerHTML += '<p>Currently crawling: <a href="' + data.url + '">' + data.url + '</a></p>';
+                } else if (data.report) {
+                    if (Object.keys(data.report).length > 0) {
+                        finalReportDiv.innerHTML = JSON.stringify(data.report, null, 4);
+                    } else {
+                        finalReportDiv.innerHTML = '<p>No results found.</p>';
+                    }
+                } else if (data.error) {  // Handling invalid URLs or errors
+                    progressDiv.innerHTML += '<p style="color: red;">Error: ' + data.error + '</p>';
+                }
+            };
+
+            socket.onclose = function(e) {
+                console.error('WebSocket closed unexpectedly');
+            };
+
+            socket.onerror = function(e) {
+                console.error('WebSocket error: ', e);
+            };
+        });
+
+        // Clear button functionality
+        document.getElementById('clearButton').addEventListener('click', function() {
+            document.getElementById('urlInput').value = '';
+            document.getElementById('progress').innerHTML = '';
+            document.getElementById('finalReport').innerHTML = '';
+        });
+    </script>
+</body>
+</html>

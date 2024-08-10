@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Crawl Progress</title>
+</head>
+<body>
+    <h1>Crawl Progress</h1>
+    <div id="progress"></div>
+
+    <script>
+        const url = 'wss://' + window.location.host + '/ws/crawl/';
+        const socket = new WebSocket(url);
+
+        socket.onopen = function(e) {
+            socket.send(JSON.stringify({'url': '{{ url_name }}'}));
+        };
+
+        socket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            const progressDiv = document.getElementById('progress');
+            progressDiv.innerHTML += '<p>' + data.url + '</p>';
+        };
+
+        socket.onclose = function(e) {
+            console.error('WebSocket closed unexpectedly');
+        };
+
+        socket.onerror = function(e) {
+            console.error('WebSocket error: ', e);
+        };
+    </script>
+</body>
+</html>
